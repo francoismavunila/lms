@@ -10,7 +10,7 @@ class BookBase(BaseModel):
     description: Optional[str] = None
     
 class BookCreate(BookBase):
-    copies_available: Optional[str] = None
+    copies_available: Optional[int] = None
    
     
 class BookRead(BookBase):
@@ -18,7 +18,7 @@ class BookRead(BookBase):
     copies_available: int
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class BookUpdate(BaseModel):
     title: Optional[str] = None

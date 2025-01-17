@@ -24,7 +24,7 @@ def register_user(user:UserCreate, db: Session = Depends(get_db)):
 def login_user(login_data: UserLogin, db: Session = Depends(get_db)):
     user = authenticate_user(db, login_data.email, login_data.password)
     if not user:
-        return HTTPException(
+        raise HTTPException(
             status_code=401,
             detail= "Invalid credentials"
         )
@@ -40,7 +40,7 @@ def get_users(db: Session = Depends(get_db)):
 def get_user(user_id:int, db: Session = Depends(get_db)):
     user = get_user_by_id(db, user_id)
     if not user:
-        return HTTPException(status_code=404, detail="user not found")
+        raise HTTPException(status_code=404, detail="user not found")
     return user
 
 @router.patch("/users/{user_id}", response_model=UserRead)
@@ -49,5 +49,5 @@ def edit_user(user_id:int,  user_update: UserUpdate, db: Session = Depends(get_d
     user = update_user(db, user_id, user_update)
     
     if not user:
-        return HTTPException(status_code=404, detail="not found")
+        raise HTTPException(status_code=404, detail="not found")
     return user
