@@ -1,6 +1,7 @@
 from sqlalchemy import Column, String, Integer, Text
 from sqlalchemy.ext.declarative import declarative_base
 from app.db.base import Base
+from sqlalchemy.orm import relationship
 
 class Book(Base):
     __tablename__ = "books"
@@ -13,5 +14,6 @@ class Book(Base):
     department = Column(String(50), nullable=True)
     description = Column(Text, nullable=True)
     copies_available = Column(Integer, default=1)
+    borrow_records = relationship("Borrow", back_populates="book")
 
     
