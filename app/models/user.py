@@ -20,4 +20,4 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     role = Column(SQLAlchemyEnum(UserRole), default=UserRole.student)  # Roles: student, faculty, librarian, admin
     
-    borrowed_books = relationship("Borrow", back_populates="user")
+    borrow_records = relationship("BorrowRecord", back_populates="user")

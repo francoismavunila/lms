@@ -1,6 +1,21 @@
 from pydantic import BaseModel
 from typing import Optional
 
+
+class BookCopyBase(BaseModel):
+    book_id: int
+
+class BookCopyCreate(BookCopyBase):
+    book_id: int
+
+class BookCopyRead(BookCopyBase):
+    id: int
+    is_borrowed: bool
+    
+    class Config:
+        from_attributes = True
+    
+
 class BookBase(BaseModel):
     title: str
     author: str
@@ -10,12 +25,12 @@ class BookBase(BaseModel):
     description: Optional[str] = None
     
 class BookCreate(BookBase):
-    copies_available: Optional[int] = None
+    pass
    
     
 class BookRead(BookBase):
     id: int
-    copies_available: int
+    copies: list[BookCopyRead]
     
     class Config:
         from_attributes = True
@@ -27,6 +42,5 @@ class BookUpdate(BaseModel):
     genre: Optional[str] = None
     department: Optional[str] = None
     description: Optional[str] = None
-    copies_available: Optional[str] = None
     
     

@@ -1,14 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.services.book import (create_book, get_books, get_book_id, update_book, delete_book, search_books)
+from app.services.book import (borrow_book, create_book, get_books, get_book_id, return_book, update_book, delete_book, search_books)
 from app.db.session import get_db
 from app.schemas.book import BookCreate, BookRead, BookUpdate
+from app.schemas.borrow import BorrowCreate, BorrowRead
 
 router = APIRouter()
 
 @router.post("/books", response_model=BookRead)
-def add_book(book_data:BookCreate, db: Session = Depends(get_db)):
-    book = create_book(db, book_data)
+def add_book(book_data:BookCreate, num_copies:int=1, db: Session = Depends(get_db)):
+    book = create_book(db, book_data, num_copies)
     return book
 
 @router.get("/books", response_model=list[BookRead])
@@ -50,3 +51,24 @@ def remove_book(book_id:int, db: Session = Depends(get_db)):
 @router.get("/books/search", response_model=list[BookRead])
 def serach_for_books(query: str, db: Session = Depends(get_db)):
     return search_books(db, query)
+
+@router.post("/borrow/{user_id}/{book_id}", response_model=BorrowRead)
+def borrow_a_book(user_id: int, book_id: int, db: Session = Depends(get_db)):
+    result = borrow_book(db, user_id, book_id)
+    
+    if result is None:
+        raise HTTPException(status_code=400, detail="No available copies")
+    
+    if result == "already_borrowed":
+        raise HTTPException(status_code=400, detail="User already borrowed this book")
+    
+    return result
+
+@router.post("/return/{user_id}/{book_copy_id}", response_model=BorrowRead)
+def return_a_book(user_id: int, book_copy_id: int, db: Session = Depends(get_db)):
+    result = return_book(db, user_id, book_copy_id)
+    
+    if not result:
+        raise HTTPException(status_code=400, detail="No active borrow record found")
+    
+    return result

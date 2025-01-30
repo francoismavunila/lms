@@ -1,17 +1,18 @@
-from app.db.base import Base
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean
-from datetime import datetime, timedelta
+from sqlalchemy import Column, Integer, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-class Borrow(Base):
-    __tablename__ = "borrows"
-    
+from datetime import datetime, timedelta
+from app.db.base import Base
+
+class BorrowRecord(Base):
+    __tablename__ = "borrow_records"
+
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", nullable = False))
-    book_id = Column(Integer, ForeignKey("books.id"), nullable=False)
-    borrow_date = Column(DateTime, default=datetime.utcnow(), nullable=False)
-    return_date = Column(DateTime, default = lambda: datetime.utcnow() + timedelta(days=14), nullable=False)
-    returned = Column(Boolean, default= False, nullable=False)
-    
-        # Relationships
-    user = relationship("User", back_populates="borrowed_books")
-    book = relationship("Book", back_populates="borrow_records")
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    book_copy_id = Column(Integer, ForeignKey("book_copies.id"), nullable=False, unique=True)
+    borrow_date = Column(DateTime, default=datetime.utcnow)
+    due_date = Column(DateTime, default=lambda: datetime.utcnow() + timedelta(days=14))
+    returned_date = Column(DateTime, nullable=True)
+
+    # Relationships
+    user = relationship("User", back_populates="borrow_records")
+    book_copy = relationship("BookCopy", back_populates="borrow_record")

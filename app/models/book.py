@@ -13,7 +13,10 @@ class Book(Base):
     genre = Column(String(50), nullable=True)
     department = Column(String(50), nullable=True)
     description = Column(Text, nullable=True)
-    copies_available = Column(Integer, default=1)
-    borrow_records = relationship("Borrow", back_populates="book")
+
+    # borrow_records = relationship("Borrow", back_populates="book")
+    # Relationships
+    copies = relationship("BookCopy", back_populates="book")
+    
 
     
