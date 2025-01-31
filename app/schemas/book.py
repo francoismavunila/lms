@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
+from app.models.book_copy import BookStatus
 
 
 class BookCopyBase(BaseModel):
@@ -10,7 +11,7 @@ class BookCopyCreate(BookCopyBase):
 
 class BookCopyRead(BookCopyBase):
     id: int
-    is_borrowed: bool
+    status: BookStatus
     
     class Config:
         from_attributes = True

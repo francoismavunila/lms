@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from app.models.book import Book
-from app.models.book_copy import BookCopy
+from app.models.book_copy import BookCopy, BookStatus
 from app.models.borrowing import BorrowRecord
 from app.schemas.book import BookCreate, BookUpdate
 from fastapi import HTTPException
@@ -63,7 +63,7 @@ def search_books(db: Session, query: str):
 
 def borrow_book(db: Session, user_id: int, book_id: int):
     book_copy = db.query(BookCopy).filter(
-        BookCopy.book_id == book_id, BookCopy.is_borrowed == False
+        BookCopy.book_id == book_id, BookCopy.status == BookStatus.AVAILABLE
     ).first()
     
     if not book_copy:
@@ -79,7 +79,7 @@ def borrow_book(db: Session, user_id: int, book_id: int):
         return "already_borrowed"  # User already has this book
 
     # Mark copy as borrowed
-    book_copy.is_borrowed = True
+    book_copy.status = BookStatus.BORROWED
 
     # Create borrow record
     borrow_record = BorrowRecord(
@@ -106,7 +106,7 @@ def return_book(db: Session, user_id: int, book_copy_id: int):
 
     # Mark book copy as available
     book_copy = db.query(BookCopy).filter(BookCopy.id == book_copy_id).first()
-    book_copy.is_borrowed = False
+    book_copy.status = BookStatus.AVAILABLE
 
     # Update return date in borrow record
     borrow_record.returned_date = datetime.utcnow()

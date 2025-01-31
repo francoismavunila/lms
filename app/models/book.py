@@ -16,7 +16,11 @@ class Book(Base):
 
     # borrow_records = relationship("Borrow", back_populates="book")
     # Relationships
-    copies = relationship("BookCopy", back_populates="book")
+    copies = relationship("BookCopy", back_populates="book", lazy="joined")
+    
+    @property
+    def available_copies(self):
+        return sum(1 for copy in self.copies if copy.status.value == "available")
     
 
     
