@@ -21,3 +21,4 @@ class User(Base):
     role = Column(SQLAlchemyEnum(UserRole), default=UserRole.student)  # Roles: student, faculty, librarian, admin
     
     borrow_records = relationship("BorrowRecord", back_populates="user")
+    reservations = relationship("Reservation", back_populates="user", cascade="all, delete-orphan")
