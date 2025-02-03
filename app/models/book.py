@@ -13,6 +13,8 @@ class Book(Base):
     genre = Column(String(50), nullable=True)
     department = Column(String(50), nullable=True)
     description = Column(Text, nullable=True)
+    image_url = Column(String(255), nullable=False, default="jahgajhghj.png")
+   
 
     # borrow_records = relationship("Borrow", back_populates="book")
     # Relationships

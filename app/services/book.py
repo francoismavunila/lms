@@ -6,11 +6,16 @@ from app.models.book_copy import BookCopy, BookStatus
 from app.models.borrowing import BorrowRecord
 from app.schemas.book import BookCreate, BookUpdate
 from fastapi import HTTPException
+from app.services.googleDriveUpload import upload_to_drive
 
-def create_book(db:Session, book_data:BookCreate, num_copies: int=1):
+def create_book(db:Session, book_data:BookCreate, file_path: str, num_copies: int=1):
     try:
-        print(book_data)
-        book = Book(**book_data.dict())
+        image_url = upload_to_drive(file_path)
+        
+        # Update book_data with the image URL
+        updated_book_data = book_data.dict()
+        updated_book_data['image_url'] = image_url
+        book = Book(**updated_book_data)
         print(book)
         db.add(book)
         db.commit()

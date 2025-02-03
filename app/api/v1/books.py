@@ -1,15 +1,43 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from app.services.book import (borrow_book, create_book, get_books, get_book_id, return_book, update_book, delete_book, search_books)
 from app.db.session import get_db
 from app.schemas.book import BookCreate, BookRead, BookUpdate
 from app.schemas.borrow import BorrowCreate, BorrowRead
+import shutil
+import os
 
 router = APIRouter()
 
 @router.post("/books", response_model=BookRead)
-def add_book(book_data:BookCreate, num_copies:int=1, db: Session = Depends(get_db)):
-    book = create_book(db, book_data, num_copies)
+def add_book(
+    title: str = Form(...),
+    author: str = Form(...),
+    isbn: str = Form(...),
+    genre: str = Form(None),
+    department: str = Form(None),
+    description: str = Form(None),
+    num_copies: int = Form(1),
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    file_path = f"temp/{file.filename}"
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    book_data = BookCreate(
+        title=title,
+        author=author,
+        isbn=isbn,
+        genre=genre,
+        department=department,
+        description=description,
+    )
+    
+    book = create_book(db, book_data, file_path, num_copies)
+    
+    # Clean up the temporary file
+    os.remove(file_path)
     return book
 
 @router.get("/books", response_model=list[BookRead])
