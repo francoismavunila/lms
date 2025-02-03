@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.schemas.user import UserRead, UserCreate, UserLogin, UserUpdate
 from app.services.user import get_user_by_email, create_user, authenticate_user, get_all_users, get_user_by_id, update_user
-from app.core.security import create_access_token
+from app.core.security import create_access_token, get_current_user
 
 router = APIRouter()
 
@@ -36,12 +36,9 @@ def get_users(db: Session = Depends(get_db)):
     users = get_all_users(db)
     return users
 
-@router.get("/users/{user_id}", response_model= UserRead)
-def get_user(user_id:int, db: Session = Depends(get_db)):
-    user = get_user_by_id(db, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="user not found")
-    return user
+@router.get("/user", response_model= UserRead)
+def get_user(current_user: UserRead = Depends(get_current_user)):
+    return current_user
 
 @router.patch("/users/{user_id}", response_model=UserRead)
 def edit_user(user_id:int,  user_update: UserUpdate, db: Session = Depends(get_db)):

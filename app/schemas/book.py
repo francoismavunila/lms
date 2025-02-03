@@ -21,6 +21,7 @@ class BookBase(BaseModel):
     title: str
     author: str
     isbn: str
+    image_url: Optional[str] = None
     genre: Optional[str] = None
     department: Optional[str] = None
     description: Optional[str] = None
