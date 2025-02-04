@@ -2,10 +2,17 @@ import os
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
+from app.core.config import Settings
 
 def upload_to_drive(file_path):
     # Load service account credentials
-    credentials = service_account.Credentials.from_service_account_file('service-account-key.json')
+    secret_account_path = ""
+    
+    if Settings.ENVIRONMENT == "production":
+        secret_account_path = "/etc/secrets/service-account-key.json"
+    else:
+        secret_account_path = "service-account-key.json" 
+    credentials = service_account.Credentials.from_service_account_file(secret_account_path)
     service = build('drive', 'v3', credentials=credentials)
 
     file_metadata = {
