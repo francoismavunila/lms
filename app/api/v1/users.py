@@ -53,3 +53,7 @@ def edit_user(user_id:int,  user_update: UserUpdate, db: Session = Depends(get_d
 @router.post("/user/email")
 def user_by_email(request: EmailRequest, db: Session = Depends(get_db)):
     return get_user_profile(db, request.email)
+
+@router.get("/user/book/profile")
+def get_book_profile(current_user: UserRead = Depends(get_current_user), db: Session = Depends(get_db)):
+    return get_user_profile(db, current_user.email)
