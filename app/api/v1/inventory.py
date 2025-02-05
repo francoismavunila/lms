@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.services.inventory import get_book_availability, update_book_status
+from app.services.inventory import books_stats, get_book_availability, update_book_status
 from app.models.book_copy import BookStatus
 
 router = APIRouter()
@@ -23,3 +23,7 @@ def change_book_status(book_copy_id: int, status: BookStatus, db: Session = Depe
         raise HTTPException(status_code=404, detail="Book copy not found")
     
     return {"book_copy_id": book_copy_id, "new_status": status.value}
+
+@router.get("/stats")
+def get_stats(db: Session = Depends(get_db)):
+    return books_stats(db)
