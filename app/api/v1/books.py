@@ -82,21 +82,11 @@ def serach_for_books(query: str, db: Session = Depends(get_db)):
 
 @router.post("/borrow/{user_id}/{book_id}", response_model=BorrowRead)
 def borrow_a_book(user_id: int, book_id: int, db: Session = Depends(get_db)):
-    result = borrow_book(db, user_id, book_id)
-    
-    if result is None:
-        raise HTTPException(status_code=400, detail="No available copies")
-    
-    if result == "already_borrowed":
-        raise HTTPException(status_code=400, detail="User already borrowed this book")
-    
-    return result
+    return borrow_book(db, user_id, book_id)
+
 
 @router.post("/return/{user_id}/{book_copy_id}", response_model=BorrowRead)
 def return_a_book(user_id: int, book_copy_id: int, db: Session = Depends(get_db)):
-    result = return_book(db, user_id, book_copy_id)
-    
-    if not result:
-        raise HTTPException(status_code=400, detail="No active borrow record found")
-    
-    return result
+    return return_book(db, user_id, book_copy_id)
+
+

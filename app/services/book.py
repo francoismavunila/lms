@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from app.models.book import Book
 from app.models.book_copy import BookCopy, BookStatus
-from app.models.borrowing import BorrowRecord
+from app.models.borrowing import BorrowHistory, BorrowRecord
 from app.schemas.book import BookCreate, BookUpdate
 from fastapi import HTTPException
 from app.services.googleDriveUpload import upload_to_drive
@@ -72,7 +72,7 @@ def borrow_book(db: Session, user_id: int, book_id: int):
     ).first()
     
     if not book_copy:
-        return None
+        raise HTTPException(status_code=400, detail="Sorry, the book you requested is currently unavailable for borrowing.")
     
     existing_borrow = db.query(BorrowRecord).filter(
         BorrowRecord.user_id == user_id,
@@ -81,7 +81,7 @@ def borrow_book(db: Session, user_id: int, book_id: int):
     ).first()
     
     if existing_borrow:
-        return "already_borrowed"  # User already has this book
+        raise HTTPException(status_code=400, detail="User already borrowed this book")
 
     # Mark copy as borrowed
     book_copy.status = BookStatus.BORROWED
@@ -99,23 +99,56 @@ def borrow_book(db: Session, user_id: int, book_id: int):
     db.refresh(borrow_record)
     return borrow_record
 
+# def return_book(db: Session, user_id: int, book_copy_id: int):
+#     borrow_record = db.query(BorrowRecord).filter(
+#         BorrowRecord.user_id == user_id,
+#         BorrowRecord.book_copy_id == book_copy_id,
+#         BorrowRecord.returned_date == None
+#     ).first()
+
+#     if not borrow_record:
+#         raise HTTPException(
+#             status_code=400,
+#             detail="no borrow record exist"
+#         )
+
+#     # Mark book copy as available
+#     book_copy = db.query(BookCopy).filter(BookCopy.id == book_copy_id).first()
+#     book_copy.status = BookStatus.AVAILABLE
+
+#     # Update return date in borrow record
+#     borrow_record.returned_date = datetime.utcnow()
+
+#     db.commit()
+#     db.refresh(borrow_record)
+#     return borrow_record
+
 def return_book(db: Session, user_id: int, book_copy_id: int):
     borrow_record = db.query(BorrowRecord).filter(
         BorrowRecord.user_id == user_id,
         BorrowRecord.book_copy_id == book_copy_id,
         BorrowRecord.returned_date == None
     ).first()
-
+    
     if not borrow_record:
-        return None  # No active borrow record found
-
-    # Mark book copy as available
-    book_copy = db.query(BookCopy).filter(BookCopy.id == book_copy_id).first()
-    book_copy.status = BookStatus.AVAILABLE
-
-    # Update return date in borrow record
-    borrow_record.returned_date = datetime.utcnow()
-
+        raise HTTPException(status_code=404, detail="Borrow record not found")
+    
+    # Move record to BorrowHistory
+    borrow_history = BorrowHistory(
+        user_id=borrow_record.user_id,
+        book_copy_id=borrow_record.book_copy_id,
+        borrow_date=borrow_record.borrow_date,
+        due_date=borrow_record.due_date,
+        returned_date=datetime.utcnow()
+    )
+    
+    db.add(borrow_history)
+    db.delete(borrow_record)
     db.commit()
-    db.refresh(borrow_record)
-    return borrow_record
+
+    # Mark the book copy as available
+    book_copy = db.query(BookCopy).filter(BookCopy.id == borrow_record.book_copy_id).first()
+    book_copy.status = BookStatus.AVAILABLE
+    db.commit()
+
+    return borrow_history

@@ -1,9 +1,12 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
-from app.schemas.user import UserCreate, UserUpdate
+from app.models.book_copy import BookCopy
+from app.models.borrowing import BorrowRecord
+from app.schemas.user import UserCreate, UserUpdate, EmailRequest
 from app.core.security import verify_password, get_password_hash
 from app.models.user import User
+from sqlalchemy.orm import joinedload
 
 def get_user_by_email(db: Session, email: str):
     return db.query(User).filter(User.email == email).first()
@@ -32,12 +35,14 @@ def create_user(db:Session, user: UserCreate):
         return db_user
     
     except IntegrityError:
+        print("user with this email or username already exist..")
         raise HTTPException(
             status_code=400,
             detail = "user with this email or username already exist.."
         )
     
     except Exception as e:
+        print(f"An unexpected error occured {str(e)}")
         raise HTTPException(
             status_code = 500,
             detail = f"An unexpected error occured {str(e)}"
@@ -62,3 +67,12 @@ def update_user(db: Session, user_id: int, user_update: UserUpdate):
     db.commit()
     db.refresh(user)
     return user
+
+def get_user_profile(db: Session, user_email: str):
+    student = db.query(User).filter(User.email == user_email).options(
+        joinedload(User.borrow_records).joinedload(BorrowRecord.book_copy).joinedload(BookCopy.book)
+    ).first()
+    if student == None:
+        print("am here")
+        raise HTTPException(status_code=400, detail="user with this email not found")
+    return student

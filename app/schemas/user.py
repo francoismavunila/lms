@@ -26,3 +26,6 @@ class UserUpdate(BaseModel):
     username: str | None = None
     role: str | None = None
     is_active: str | None = None
+    
+class EmailRequest(BaseModel):
+    email: EmailStr
