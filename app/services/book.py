@@ -7,6 +7,9 @@ from app.models.borrowing import BorrowHistory, BorrowRecord
 from app.schemas.book import BookCreate, BookUpdate
 from fastapi import HTTPException
 from app.services.googleDriveUpload import upload_to_drive
+from app.models.reservation import Reservation, ReservationStatus
+from app.services.notifications import create_notification
+from app.models.reservation import Reservation, ReservationStatus
 
 def create_book(db:Session, book_data:BookCreate, file_path: str, num_copies: int=1):
     try:
@@ -97,6 +100,12 @@ def borrow_book(db: Session, user_id: int, book_id: int):
     db.add(borrow_record)
     db.commit()
     db.refresh(borrow_record)
+    
+    # now lets check if the book was in the reservation and close it
+    reservation_exists = db.query(Reservation).filter(Reservation.book_id == book_id, Reservation.user_id == user_id, Reservation.status == ReservationStatus.PENDING).first()
+    if reservation_exists:
+        reservation_exists.status = ReservationStatus.COMPLETED
+        db.commit()
     return borrow_record
 
 # def return_book(db: Session, user_id: int, book_copy_id: int):
@@ -150,5 +159,28 @@ def return_book(db: Session, user_id: int, book_copy_id: int):
     book_copy = db.query(BookCopy).filter(BookCopy.id == borrow_record.book_copy_id).first()
     book_copy.status = BookStatus.AVAILABLE
     db.commit()
+    
+    # check if the book is in the reservation records and create notifications for this
+    book_copy_exist = db.query(BookCopy).filter(BookCopy.id == book_copy_id).first()
+    book = book_copy_exist.book
+    if not book:
+        return borrow_history
+
+    reservations = db.query(Reservation).filter(
+        Reservation.book_id == book_copy_exist.book_id,
+        Reservation.status == ReservationStatus.PENDING
+    ).all()
+
+    if not reservations:
+        return borrow_history
+
+    # CREATE notifications
+    not_data = {
+        "title": "Your reserved book",
+        "message": f"a copy of the book with title {book.title} is now available, check with the librarian"
+    }
+
+    for reservation in reservations:
+        create_notification(db, reservation.user_id, not_data)
 
     return borrow_history
