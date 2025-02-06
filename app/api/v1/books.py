@@ -1,5 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
+from app.core.security import get_current_user
+from app.models.book import Book
+from app.models.book_copy import BookCopy
+from app.models.borrowing import BorrowHistory
+from app.models.user import User
 from app.services.book import (borrow_book, create_book, get_books, get_book_id, return_book, update_book, delete_book, search_books)
 from app.db.session import get_db
 from app.schemas.book import BookCreate, BookRead, BookUpdate
@@ -88,5 +93,33 @@ def borrow_a_book(user_id: int, book_id: int, db: Session = Depends(get_db)):
 @router.post("/return/{user_id}/{book_copy_id}", response_model=BorrowRead)
 def return_a_book(user_id: int, book_copy_id: int, db: Session = Depends(get_db)):
     return return_book(db, user_id, book_copy_id)
+
+@router.get("/borrow-history")
+def get_student_borrow_history(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # Fetch borrow history for the current user
+    borrow_history = (
+        db.query(BorrowHistory)
+        .join(BookCopy, BorrowHistory.book_copy_id == BookCopy.id)
+        .join(Book, BookCopy.book_id == Book.id)
+        .filter(BorrowHistory.user_id == current_user.id)
+        .all()
+    )
+
+    # Convert to response format
+    history_data = [
+        {
+            "id": record.id,
+            "bookTitle": record.book_copy.book.title,
+            "borrowDate": record.borrow_date,
+            "dueDate": record.due_date,
+            "returnedDate": record.returned_date
+        }
+        for record in borrow_history
+    ]
+
+    return history_data
 
 
